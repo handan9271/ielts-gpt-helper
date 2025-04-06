@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>GPT 雅思助教 - Render 部署版</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 2rem; }
+    textarea, select, button { width: 100%; font-size: 1rem; margin-top: 1rem; }
+    textarea { height: 100px; }
+    #output { white-space: pre-wrap; background: #f6f6f6; padding: 1rem; border-radius: 6px; margin-top: 1.5rem; }
+    .loading { color: gray; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h2>🎯 GPT 雅思写作与口语助教（Render 版）</h2>
+  <label for="question">选择题目：</label>
+  <select id="question">
+    <option value="Describe a piece of technology you own that is difficult to use.">Describe a piece of technology you own that is difficult to use.</option>
+    <option value="Describe a person you know who often helps others.">Describe a person you know who often helps others.</option>
+    <option value="Describe a time you received positive feedback.">Describe a time you received positive feedback.</option>
+    <option value="Describe a goal you want to achieve in the future.">Describe a goal you want to achieve in the future.</option>
+    <option value="Describe something you did that made you feel proud.">Describe something you did that made you feel proud.</option>
+  </select>
+
+  <label for="input">你的中文思路：</label>
+  <textarea id="input" placeholder="请输入你对题目的中文想法…"></textarea>
+
+  <button onclick="submit()">🎬 生成英文反馈</button>
+
+  <div id="output"></div>
+
+  <script>
+    async function submit() {
+      const input = document.getElementById('input').value.trim();
+      const question = document.getElementById('question').value;
+      const output = document.getElementById('output');
+      if (!input) {
+        output.innerText = "⚠️ 请输入你的中文思路。";
+        return;
+      }
+      output.innerHTML = '<span class="loading">⏳ 正在生成中，请稍候...</span>';
+      try {
+        const res = await fetch("/api/ielts-helper", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, input })
+        });
+        const data = await res.json();
+        output.innerText = data.reply || "⚠️ 生成失败，请重试或检查服务状态。";
+      } catch (e) {
+        output.innerText = "❌ 请求失败，请检查服务是否在线。";
+      }
+    }
+  </script>
+</body>
+</html>
