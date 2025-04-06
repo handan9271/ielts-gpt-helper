@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -41,7 +40,7 @@
       }
       output.innerHTML = '<span class="loading">⏳ 正在生成中，请稍候...</span>';
       try {
-        const res = await fetch("/api/ielts-helper", {
+        const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question, input })
@@ -55,3 +54,4 @@
   </script>
 </body>
 </html>
+
