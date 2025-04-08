@@ -41,7 +41,10 @@
   <p class="subtitle">我会认真听你说出想法，帮你优化成英文表达，还会给出一点温柔的评分建议 💛</p>
 
   <label>🧠 今天我们聊聊这个话题：</label>
-  <div id="current-question" style="margin-top: 0.5rem; font-weight: bold;"></div>
+  <div id="current-question" style="margin-top: 0.5rem; font-weight: bold;">
+    <span id="question-en"></span><br>
+    <span class="zh" id="question-zh"></span>
+  </div>
   <p style="font-size: 0.9rem; color: #999;">💡 不喜欢这个题目？点按钮换一个～</p>
   <div class="btn-row">
     <button onclick="loadQuestion()">🎲 换一个题目</button>
@@ -91,15 +94,19 @@
     ];
 
     async function loadQuestion() {
-      const qDiv = document.getElementById("current-question");
-      qDiv.innerHTML = "⏳ 正在为你挑选新题目...";
+      const enSpan = document.getElementById("question-en");
+      const zhSpan = document.getElementById("question-zh");
+      enSpan.innerText = "⏳ 正在为你挑选新题目...";
+      zhSpan.innerText = "";
       try {
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/random-question");
         const data = await res.json();
         selectedQuestion = data;
-        qDiv.innerHTML = `${data.en}<br/><span class='zh'>📖 中文：${data.zh}</span>`;
+        enSpan.innerText = data.en;
+        zhSpan.innerText = `📖 中文：${data.zh}`;
       } catch (e) {
-        qDiv.innerHTML = "❌ 获取题目失败，请稍后再试。";
+        enSpan.innerText = "❌ 获取题目失败，请稍后再试。";
+        zhSpan.innerText = "";
       }
     }
 
