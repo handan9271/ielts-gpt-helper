@@ -9,7 +9,7 @@
     textarea, button { width: 100%; font-size: 1rem; margin-top: 1rem; }
     textarea { height: 120px; padding: 0.5rem; }
     #output { white-space: pre-wrap; background: #f6f6f6; padding: 1rem; border-radius: 6px; margin-top: 1.5rem; }
-    .loading { color: gray; font-style: italic; }
+    .loading { color: gray; font-style: italic; font-size: 1rem; }
     .zh { color: #666; font-size: 0.95rem; }
     .btn-row { display: flex; gap: 1rem; margin-top: 0.5rem; }
     .btn-row button { flex: 1; }
@@ -101,7 +101,19 @@
         output.innerText = "⚠️ 请输入你的中文思路。";
         return;
       }
-      output.innerHTML = '<span class="loading">⏳ 我正在认真听你说，请稍候...</span>';
+
+      // 加载动画开始
+      output.innerHTML = `
+        <div class="loading">
+          🎧 小助教正在认真思考中，请稍候<span id="dots">.</span>
+        </div>
+      `;
+      let dotCount = 1;
+      const dotInterval = setInterval(() => {
+        dotCount = (dotCount % 3) + 1;
+        document.getElementById("dots").innerText = '.'.repeat(dotCount);
+      }, 500);
+
       try {
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
           method: "POST",
@@ -109,8 +121,10 @@
           body: JSON.stringify({ question: selectedQuestion.en, input })
         });
         const data = await res.json();
-        output.innerText = data.reply || "⚠️ 生成失败，请重试或稍后再来。";
+        clearInterval(dotInterval);
+        output.innerText = data.reply || "⚠️ 生成失败，请重试或检查服务状态。";
       } catch (e) {
+        clearInterval(dotInterval);
         output.innerText = "❌ 请求失败，请检查服务是否在线。";
       }
     }
