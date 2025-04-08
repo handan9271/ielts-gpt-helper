@@ -9,11 +9,21 @@
     textarea, button { width: 100%; font-size: 1rem; margin-top: 1rem; }
     textarea { height: 120px; padding: 0.5rem; }
     #output { white-space: pre-wrap; background: #f6f6f6; padding: 1rem; border-radius: 6px; margin-top: 1.5rem; }
-    .loading { color: gray; font-style: italic; font-size: 1rem; }
+    .loading { color: gray; font-style: italic; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
     .zh { color: #666; font-size: 0.95rem; }
     .btn-row { display: flex; gap: 1rem; margin-top: 0.5rem; }
     .btn-row button { flex: 1; }
     .subtitle { color: #888; font-size: 0.95rem; margin-top: -1rem; margin-bottom: 1rem; }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      50% { transform: rotate(180deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #hourglass {
+      display: inline-block;
+      animation: spin 2s linear infinite;
+      font-size: 1.4rem;
+    }
   </style>
 </head>
 <body>
@@ -24,7 +34,7 @@
   <div id="current-question" style="margin-top: 0.5rem; font-weight: bold;"></div>
   <p style="font-size: 0.9rem; color: #999;">💡 不喜欢这个题目？点按钮换一个～</p>
   <div class="btn-row">
-    <button onclick="randomQuestion()">🎲 换一个题目</button>
+    <button onclick="loadQuestion()">🎲 换一个题目</button>
   </div>
 
   <label for="input">✏️ 想说点什么呢？</label>
@@ -39,60 +49,30 @@
   </p>
 
   <script>
-    const questionList = [
-      {
-        en: "Describe a time you received positive feedback.",
-        zh: "描述一次你收到积极反馈的经历"
-      },
-      {
-        en: "Describe a goal you want to achieve in the future.",
-        zh: "描述一个你想在未来实现的目标"
-      },
-      {
-        en: "Describe a person who inspires you.",
-        zh: "描述一个激励你的人"
-      },
-      {
-        en: "Describe something you did that made you feel proud.",
-        zh: "描述一件让你感到自豪的事"
-      },
-      {
-        en: "Describe a place you would like to visit.",
-        zh: "描述一个你想去的地方"
-      },
-      {
-        en: "Describe a piece of technology you own that is difficult to use.",
-        zh: "描述一个你拥有但难以使用的科技产品"
-      },
-      {
-        en: "Describe a time you helped someone.",
-        zh: "描述一次你帮助他人的经历"
-      },
-      {
-        en: "Describe a time you were excited.",
-        zh: "描述一次你感到兴奋的经历"
-      },
-      {
-        en: "Describe a problem you solved.",
-        zh: "描述一个你解决的问题"
-      },
-      {
-        en: "Describe a person who often helps others.",
-        zh: "描述一个经常帮助他人的人"
-      }
+    let selectedQuestion = { en: '', zh: '' };
+
+    const encouragements = [
+      "🌟 想说得更好？下一题见！你的每一次表达，都是进步的开始 💪",
+      "💬 继续试试看下一题？我还想听你说～",
+      "📖 每一次练习，都是在积累属于你的语言力量。",
+      "🎧 小助教还在这儿，随时帮你继续表达～",
+      "✨ 坚持表达的你，真的越来越棒了！"
     ];
 
-    let selectedQuestion = null;
-
-    function randomQuestion() {
-      selectedQuestion = questionList[Math.floor(Math.random() * questionList.length)];
-      document.getElementById("current-question").innerHTML = `
-        ${selectedQuestion.en}<br />
-        <span class="zh">📖 中文：${selectedQuestion.zh}</span>
-      `;
+    async function loadQuestion() {
+      const qDiv = document.getElementById("current-question");
+      qDiv.innerHTML = "⏳ 正在为你挑选新题目...";
+      try {
+        const res = await fetch("https://ielts-gpt-helper.onrender.com/api/random-question");
+        const data = await res.json();
+        selectedQuestion = data;
+        qDiv.innerHTML = `${data.en}<br/><span class='zh'>📖 中文：${data.zh}</span>`;
+      } catch (e) {
+        qDiv.innerHTML = "❌ 获取题目失败，请稍后再试。";
+      }
     }
 
-    window.onload = () => randomQuestion();
+    window.onload = () => loadQuestion();
 
     async function submit() {
       const input = document.getElementById('input').value.trim();
@@ -102,17 +82,12 @@
         return;
       }
 
-      // 加载动画开始
       output.innerHTML = `
         <div class="loading">
-          🎧 小助教正在认真思考中，请稍候<span id="dots">.</span>
+          <span id="hourglass">⏳</span>
+          小助教正在认真思考中，请稍候…
         </div>
       `;
-      let dotCount = 1;
-      const dotInterval = setInterval(() => {
-        dotCount = (dotCount % 3) + 1;
-        document.getElementById("dots").innerText = '.'.repeat(dotCount);
-      }, 500);
 
       try {
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
@@ -121,10 +96,9 @@
           body: JSON.stringify({ question: selectedQuestion.en, input })
         });
         const data = await res.json();
-        clearInterval(dotInterval);
-        output.innerText = data.reply || "⚠️ 生成失败，请重试或检查服务状态。";
+        const encouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
+        output.innerText = (data.reply || "⚠️ 生成失败，请重试或检查服务状态。") + "\n\n" + encouragement;
       } catch (e) {
-        clearInterval(dotInterval);
         output.innerText = "❌ 请求失败，请检查服务是否在线。";
       }
     }
