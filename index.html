@@ -29,6 +29,11 @@
     #output code { background: #f0f0f0; padding: 2px 4px; border-radius: 4px; }
     #output strong { font-weight: bold; }
     #output em { font-style: italic; }
+    mark {
+      background: #fff2a8;
+      padding: 0 2px;
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
@@ -54,6 +59,27 @@
   </p>
 
   <script>
+    // 添加自定义 ==高亮== 的 Markdown 支持
+    marked.use({
+      tokenizer: {
+        highlight(src) {
+          const match = /^==(.+?)==/.exec(src);
+          if (match) {
+            return {
+              type: "highlight",
+              raw: match[0],
+              text: match[1],
+            };
+          }
+        }
+      },
+      renderer: {
+        highlight(token) {
+          return `<mark>${token.text}</mark>`;
+        }
+      }
+    });
+
     let selectedQuestion = { en: '', zh: '' };
 
     const encouragements = [
