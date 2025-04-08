@@ -13,12 +13,13 @@
     #current-question { font-weight: bold; font-size: 1.1rem; margin-top: 0.5rem; }
     .btn-row { display: flex; gap: 1rem; }
     .btn-row button { flex: 1; }
+    .zh { color: gray; font-size: 0.95rem; }
   </style>
 </head>
 <body>
   <h2>🎯 GPT 雅思口语助教</h2>
 
-  <label>🧠 本次题目（点击按钮可换题）：</label>
+  <label>🧠 本次题目：</label>
   <div id="current-question">正在加载题目...</div>
   <div class="btn-row">
     <button onclick="randomQuestion()">🎲 换一个题目</button>
@@ -33,23 +34,56 @@
 
   <script>
     const questionList = [
-      "Describe a person who inspires you.",
-      "Describe a time you received positive feedback.",
-      "Describe a goal you want to achieve in the future.",
-      "Describe something you did that made you feel proud.",
-      "Describe a time you helped someone.",
-      "Describe a time you were excited.",
-      "Describe a place you would like to visit.",
-      "Describe a problem you solved.",
-      "Describe a person who often helps others.",
-      "Describe a piece of technology you own that is difficult to use."
+      {
+        en: "Describe a time you received positive feedback.",
+        zh: "描述一次你收到积极反馈的经历"
+      },
+      {
+        en: "Describe a goal you want to achieve in the future.",
+        zh: "描述一个你想在未来实现的目标"
+      },
+      {
+        en: "Describe a person who inspires you.",
+        zh: "描述一个激励你的人"
+      },
+      {
+        en: "Describe something you did that made you feel proud.",
+        zh: "描述一件让你感到自豪的事"
+      },
+      {
+        en: "Describe a place you would like to visit.",
+        zh: "描述一个你想去的地方"
+      },
+      {
+        en: "Describe a piece of technology you own that is difficult to use.",
+        zh: "描述一个你拥有但难以使用的科技产品"
+      },
+      {
+        en: "Describe a time you helped someone.",
+        zh: "描述一次你帮助他人的经历"
+      },
+      {
+        en: "Describe a time you were excited.",
+        zh: "描述一次你感到兴奋的经历"
+      },
+      {
+        en: "Describe a problem you solved.",
+        zh: "描述一个你解决的问题"
+      },
+      {
+        en: "Describe a person who often helps others.",
+        zh: "描述一个经常帮助他人的人"
+      }
     ];
 
-    let selectedQuestion = "";
+    let selectedQuestion = null;
 
     function randomQuestion() {
       selectedQuestion = questionList[Math.floor(Math.random() * questionList.length)];
-      document.getElementById("current-question").innerText = selectedQuestion;
+      document.getElementById("current-question").innerHTML = `
+        ${selectedQuestion.en}<br />
+        <span class="zh">📖 中文：${selectedQuestion.zh}</span>
+      `;
     }
 
     window.onload = () => randomQuestion();
@@ -66,7 +100,7 @@
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: selectedQuestion, input })
+          body: JSON.stringify({ question: selectedQuestion.en, input })
         });
         const data = await res.json();
         output.innerText = data.reply || "⚠️ 生成失败，请重试或检查服务状态。";
