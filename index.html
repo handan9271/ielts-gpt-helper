@@ -2,35 +2,41 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>GPT 雅思助教</title>
+  <title>GPT 雅思倾听助教</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 2rem; }
+    body { font-family: "Arial", sans-serif; max-width: 800px; margin: auto; padding: 2rem; line-height: 1.6; }
     textarea, button { width: 100%; font-size: 1rem; margin-top: 1rem; }
-    textarea { height: 100px; }
+    textarea { height: 120px; padding: 0.5rem; }
     #output { white-space: pre-wrap; background: #f6f6f6; padding: 1rem; border-radius: 6px; margin-top: 1.5rem; }
     .loading { color: gray; font-style: italic; }
-    #current-question { font-weight: bold; font-size: 1.1rem; margin-top: 0.5rem; }
-    .btn-row { display: flex; gap: 1rem; }
+    .zh { color: #666; font-size: 0.95rem; }
+    .btn-row { display: flex; gap: 1rem; margin-top: 0.5rem; }
     .btn-row button { flex: 1; }
-    .zh { color: gray; font-size: 0.95rem; }
+    .subtitle { color: #888; font-size: 0.95rem; margin-top: -1rem; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
-  <h2>🎯 GPT 雅思口语助教</h2>
+  <h2>🎧 你好，我是你的雅思表达小伙伴</h2>
+  <p class="subtitle">我不打分、不打断，只想听你怎么说，然后帮你说得更棒 💛</p>
 
-  <label>🧠 本次题目：</label>
-  <div id="current-question">正在加载题目...</div>
+  <label>🧠 今天我们聊聊这个话题：</label>
+  <div id="current-question" style="margin-top: 0.5rem; font-weight: bold;"></div>
+  <p style="font-size: 0.9rem; color: #999;">💡 如果这个题目你不太有感觉，点击下面按钮换一个～</p>
   <div class="btn-row">
     <button onclick="randomQuestion()">🎲 换一个题目</button>
   </div>
 
-  <label for="input">📝 你的中文思路：</label>
-  <textarea id="input" placeholder="请输入你对题目的中文想法…"></textarea>
+  <label for="input">✏️ 你的中文想法：</label>
+  <textarea id="input" placeholder="就像和朋友聊天那样，说说你想到的画面、细节或情绪…"></textarea>
 
-  <button onclick="submit()">🎬 生成英文反馈</button>
+  <button onclick="submit()">🎬 帮我优化成英文表达</button>
 
   <div id="output"></div>
+
+  <p style="text-align:center; color:#aaa; margin-top:2rem;">
+    🪴 每一次表达，都是你思考与成长的一部分。
+  </p>
 
   <script>
     const questionList = [
@@ -95,7 +101,7 @@
         output.innerText = "⚠️ 请输入你的中文思路。";
         return;
       }
-      output.innerHTML = '<span class="loading">⏳ 正在生成中，请稍候...</span>';
+      output.innerHTML = '<span class="loading">⏳ 我正在认真帮你整理思路，请稍候...</span>';
       try {
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
           method: "POST",
@@ -103,7 +109,7 @@
           body: JSON.stringify({ question: selectedQuestion.en, input })
         });
         const data = await res.json();
-        output.innerText = data.reply || "⚠️ 生成失败，请重试或检查服务状态。";
+        output.innerText = data.reply || "⚠️ 没有生成成功，请重试或稍后再来。";
       } catch (e) {
         output.innerText = "❌ 请求失败，请检查服务是否在线。";
       }
