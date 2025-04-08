@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -16,7 +15,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 class IELTSRequest(BaseModel):
     question: str
@@ -48,10 +46,44 @@ PROMPT_TEMPLATE = """你是一位面向雅思6分以下考生的 AI 写作与口
 async def ielts_helper(data: IELTSRequest):
     prompt = PROMPT_TEMPLATE.format(input_text=data.input, question=data.question)
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4",  # 如果你已经切到 gpt-3.5-turbo 可换成那个
         messages=[
             {"role": "system", "content": "你是一个雅思AI助教"},
             {"role": "user", "content": prompt}
         ]
     )
     return {"reply": response.choices[0].message.content}
+
+
+# ✅ 新增接口：动态生成热门雅思题目（英文+中文）
+@app.get("/api/random-question")
+async def random_question():
+    question_prompt = """
+你是一位雅思口语考官助理，请你从最近真实的 Part 2 题库中，随机选择一个热门且具启发性的题目，返回 JSON 格式：
+
+英文题目字段是 "en"，中文翻译字段是 "zh"。
+
+示例：
+{
+  "en": "Describe a time you received positive feedback.",
+  "zh": "描述一次你收到积极反馈的经历"
+}
+只输出 JSON，其他内容不要输出。
+"""
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "你是一个雅思口语题库生成器"},
+            {"role": "user", "content": question_prompt.strip()}
+        ]
+    )
+
+    import json
+    try:
+        result = json.loads(response.choices[0].message.content)
+        return result
+    except:
+        return {
+            "en": "Describe a piece of technology you use frequently.",
+            "zh": "描述一个你经常使用的科技产品（备用题）"
+        }
