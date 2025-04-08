@@ -3,26 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <title>GPT 雅思助教</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 2rem; }
-    textarea, select, button { width: 100%; font-size: 1rem; margin-top: 1rem; }
+    textarea, button { width: 100%; font-size: 1rem; margin-top: 1rem; }
     textarea { height: 100px; }
     #output { white-space: pre-wrap; background: #f6f6f6; padding: 1rem; border-radius: 6px; margin-top: 1.5rem; }
     .loading { color: gray; font-style: italic; }
+    #current-question { font-weight: bold; font-size: 1.1rem; margin-top: 0.5rem; }
+    .btn-row { display: flex; gap: 1rem; }
+    .btn-row button { flex: 1; }
   </style>
 </head>
 <body>
-  <h2>🎯 GPT 雅思写作与口语助教（Render 版）</h2>
-  <label for="question">选择题目：</label>
-  <select id="question">
-    <option value="Describe a piece of technology you own that is difficult to use.">Describe a piece of technology you own that is difficult to use.</option>
-    <option value="Describe a person you know who often helps others.">Describe a person you know who often helps others.</option>
-    <option value="Describe a time you received positive feedback.">Describe a time you received positive feedback.</option>
-    <option value="Describe a goal you want to achieve in the future.">Describe a goal you want to achieve in the future.</option>
-    <option value="Describe something you did that made you feel proud.">Describe something you did that made you feel proud.</option>
-  </select>
+  <h2>🎯 GPT 雅思写作与口语助教</h2>
 
-  <label for="input">你的中文思路：</label>
+  <label>🧠 本次题目（点击按钮可换题）：</label>
+  <div id="current-question">正在加载题目...</div>
+  <div class="btn-row">
+    <button onclick="randomQuestion()">🎲 换一个题目</button>
+  </div>
+
+  <label for="input">📝 你的中文思路：</label>
   <textarea id="input" placeholder="请输入你对题目的中文想法…"></textarea>
 
   <button onclick="submit()">🎬 生成英文反馈</button>
@@ -30,9 +32,30 @@
   <div id="output"></div>
 
   <script>
+    const questionList = [
+      "Describe a person who inspires you.",
+      "Describe a time you received positive feedback.",
+      "Describe a goal you want to achieve in the future.",
+      "Describe something you did that made you feel proud.",
+      "Describe a time you helped someone.",
+      "Describe a time you were excited.",
+      "Describe a place you would like to visit.",
+      "Describe a problem you solved.",
+      "Describe a person who often helps others.",
+      "Describe a piece of technology you own that is difficult to use."
+    ];
+
+    let selectedQuestion = "";
+
+    function randomQuestion() {
+      selectedQuestion = questionList[Math.floor(Math.random() * questionList.length)];
+      document.getElementById("current-question").innerText = selectedQuestion;
+    }
+
+    window.onload = () => randomQuestion();
+
     async function submit() {
       const input = document.getElementById('input').value.trim();
-      const question = document.getElementById('question').value;
       const output = document.getElementById('output');
       if (!input) {
         output.innerText = "⚠️ 请输入你的中文思路。";
@@ -43,7 +66,7 @@
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, input })
+          body: JSON.stringify({ question: selectedQuestion, input })
         });
         const data = await res.json();
         output.innerText = data.reply || "⚠️ 生成失败，请重试或检查服务状态。";
@@ -54,4 +77,3 @@
   </script>
 </body>
 </html>
-
