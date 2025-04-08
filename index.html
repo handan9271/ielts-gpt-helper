@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>GPT 雅思倾听助教</title>
+  <title>雅思表达小助教 · 倾听你的表达，优化你的英文</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body { font-family: "Arial", sans-serif; max-width: 800px; margin: auto; padding: 2rem; line-height: 1.6; }
@@ -17,25 +17,25 @@
   </style>
 </head>
 <body>
-  <h2>🎧 你好，我是你的雅思表达小伙伴</h2>
-  <p class="subtitle">我不打分、不打断，只想听你怎么说，然后帮你说得更棒 💛</p>
+  <h2>🎧 嗨，我是你的雅思表达小助教</h2>
+  <p class="subtitle">我会认真听你说出想法，帮你优化成英文表达，还会给出一点温柔的评分建议 💛</p>
 
   <label>🧠 今天我们聊聊这个话题：</label>
   <div id="current-question" style="margin-top: 0.5rem; font-weight: bold;"></div>
-  <p style="font-size: 0.9rem; color: #999;">💡 如果这个题目你不太有感觉，点击下面按钮换一个～</p>
+  <p style="font-size: 0.9rem; color: #999;">💡 不喜欢这个题目？点按钮换一个～</p>
   <div class="btn-row">
     <button onclick="randomQuestion()">🎲 换一个题目</button>
   </div>
 
-  <label for="input">✏️ 你的中文想法：</label>
-  <textarea id="input" placeholder="就像和朋友聊天那样，说说你想到的画面、细节或情绪…"></textarea>
+  <label for="input">✏️ 想说点什么呢？</label>
+  <textarea id="input" placeholder="把你想说的写下来，随便写，我会帮你变成更清晰的英文表达…"></textarea>
 
-  <button onclick="submit()">🎬 帮我优化成英文表达</button>
+  <button onclick="submit()">💬 优化成英文表达</button>
 
   <div id="output"></div>
 
   <p style="text-align:center; color:#aaa; margin-top:2rem;">
-    🪴 每一次表达，都是你思考与成长的一部分。
+    🌱 每一次表达，都是你思考与成长的一部分。
   </p>
 
   <script>
@@ -101,7 +101,7 @@
         output.innerText = "⚠️ 请输入你的中文思路。";
         return;
       }
-      output.innerHTML = '<span class="loading">⏳ 我正在认真帮你整理思路，请稍候...</span>';
+      output.innerHTML = '<span class="loading">⏳ 我正在认真听你说，请稍候...</span>';
       try {
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
           method: "POST",
@@ -109,7 +109,7 @@
           body: JSON.stringify({ question: selectedQuestion.en, input })
         });
         const data = await res.json();
-        output.innerText = data.reply || "⚠️ 没有生成成功，请重试或稍后再来。";
+        output.innerText = data.reply || "⚠️ 生成失败，请重试或稍后再来。";
       } catch (e) {
         output.innerText = "❌ 请求失败，请检查服务是否在线。";
       }
