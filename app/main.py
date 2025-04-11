@@ -94,3 +94,4 @@ async def random_question():
             "en": "Describe a piece of technology you use frequently.",
             "zh": "描述一个你经常使用的科技产品（备用题）"
         }
+
