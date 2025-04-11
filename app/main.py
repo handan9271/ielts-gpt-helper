@@ -5,7 +5,6 @@ from pydantic import BaseModel
 import openai
 import os
 import json
-import asyncio
 
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -13,7 +12,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://handan9271.github.io"],
+    allow_origins=["*"],  # 👈 建议你临时开放所有域名测试（可后续限制）
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,31 +42,27 @@ PROMPT_TEMPLATE = """你是一位面向雅思6分以下考生的 AI 写作与口
 """
 
 @app.post("/api/ielts-helper")
-async def ielts_helper_stream(data: IELTSRequest):
+async def ielts_helper(data: IELTSRequest):
     prompt = PROMPT_TEMPLATE.format(input_text=data.input, question=data.question)
 
-    def gpt_stream():
-        return client.chat.completions.create(
+    def gen():
+        response = client.chat.completions.create(
             model="gpt-4-0125-preview",
             messages=[
                 {"role": "system", "content": "你是一个雅思AI助教"},
                 {"role": "user", "content": prompt}
             ],
-            stream=True
+            stream=True,
         )
-
-    async def generate():
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(None, gpt_stream)
         for chunk in response:
             if chunk.choices and chunk.choices[0].delta.get("content"):
                 yield chunk.choices[0].delta["content"]
 
-    return StreamingResponse(generate(), media_type="text/plain")
+    return StreamingResponse(gen(), media_type="text/plain")
 
 @app.get("/api/random-question")
 async def random_question():
-    question_prompt = """
+    prompt = """
 你是一位雅思口语考官助理，请你从最近真实的 Part 2 题库中，随机选择一个热门且具启发性的题目，返回 JSON 格式：
 
 英文题目字段是 "en"，中文翻译字段是 "zh"。
@@ -83,15 +78,13 @@ async def random_question():
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "你是一个雅思口语题库生成器"},
-            {"role": "user", "content": question_prompt.strip()}
+            {"role": "user", "content": prompt.strip()}
         ]
     )
     try:
-        result = json.loads(response.choices[0].message.content)
-        return result
+        return json.loads(response.choices[0].message.content)
     except:
         return {
             "en": "Describe a piece of technology you use frequently.",
             "zh": "描述一个你经常使用的科技产品（备用题）"
         }
-
