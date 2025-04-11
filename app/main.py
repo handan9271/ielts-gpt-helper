@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import openai
 import os
@@ -24,7 +25,6 @@ PROMPT_TEMPLATE = """你是一位面向雅思6分以下考生的 AI 写作与口
 
 ---
 
-
 【TEEL结构英文表达（逐句输出 + 中文翻译 + 高亮表达）】
 学生中文思路如下：{input_text}
 
@@ -41,19 +41,25 @@ PROMPT_TEMPLATE = """你是一位面向雅思6分以下考生的 AI 写作与口
 """
 
 @app.post("/api/ielts-helper")
-async def ielts_helper(data: IELTSRequest):
+async def ielts_helper_stream(data: IELTSRequest):
     prompt = PROMPT_TEMPLATE.format(input_text=data.input, question=data.question)
-    response = client.chat.completions.create(
-        model="gpt-4-0125-preview", 
-        messages=[
-            {"role": "system", "content": "你是一个雅思AI助教"},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    return {"reply": response.choices[0].message.content}
 
+    def generate():
+        response = client.chat.completions.create(
+            model="gpt-4-0125-preview",
+            messages=[
+                {"role": "system", "content": "你是一个雅思AI助教"},
+                {"role": "user", "content": prompt}
+            ],
+            stream=True
+        )
+        for chunk in response:
+            if chunk.choices[0].delta.get("content"):
+                yield chunk.choices[0].delta.content
 
-# ✅ 新增接口：动态生成热门雅思题目（英文+中文）
+    return StreamingResponse(generate(), media_type="text/plain")
+
+# ✅ 动态生成热门雅思题目
 @app.get("/api/random-question")
 async def random_question():
     question_prompt = """
@@ -75,7 +81,6 @@ async def random_question():
             {"role": "user", "content": question_prompt.strip()}
         ]
     )
-
     import json
     try:
         result = json.loads(response.choices[0].message.content)
