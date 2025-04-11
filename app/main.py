@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import openai
 import os
@@ -12,7 +11,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 👈 建议你临时开放所有域名测试（可后续限制）
+    allow_origins=["https://handan9271.github.io"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,21 +43,14 @@ PROMPT_TEMPLATE = """你是一位面向雅思6分以下考生的 AI 写作与口
 @app.post("/api/ielts-helper")
 async def ielts_helper(data: IELTSRequest):
     prompt = PROMPT_TEMPLATE.format(input_text=data.input, question=data.question)
-
-    def gen():
-        response = client.chat.completions.create(
-            model="gpt-4-0125-preview",
-            messages=[
-                {"role": "system", "content": "你是一个雅思AI助教"},
-                {"role": "user", "content": prompt}
-            ],
-            stream=True,
-        )
-        for chunk in response:
-            if chunk.choices and chunk.choices[0].delta.get("content"):
-                yield chunk.choices[0].delta["content"]
-
-    return StreamingResponse(gen(), media_type="text/plain")
+    response = client.chat.completions.create(
+        model="gpt-4-0125-preview",
+        messages=[
+            {"role": "system", "content": "你是一个雅思AI助教"},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return {"reply": response.choices[0].message.content}
 
 @app.get("/api/random-question")
 async def random_question():
