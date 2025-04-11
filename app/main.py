@@ -5,14 +5,12 @@ from pydantic import BaseModel
 import openai
 import os
 import json
+import asyncio
 
-# ✅ 初始化 OpenAI 客户端
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ✅ 初始化 FastAPI 应用
 app = FastAPI()
 
-# ✅ 跨域支持（允许前端 GitHub 页面访问）
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://handan9271.github.io"],
@@ -21,12 +19,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ 接收 POST 数据的结构
 class IELTSRequest(BaseModel):
     question: str
     input: str
 
-# ✅ 主提示模板
 PROMPT_TEMPLATE = """你是一位面向雅思6分以下考生的 AI 写作与口语助教，帮助学生将中文思路转化为结构清晰、语言丰富、逐步提升的英文表达，并引导他们掌握提分关键表达。你的任务包括以下五步：
 
 ---
@@ -46,27 +42,29 @@ PROMPT_TEMPLATE = """你是一位面向雅思6分以下考生的 AI 写作与口
 生成一个更高分数（+1分）的完整英文段落，与学生原始表达相同主题，逐句翻译并高亮表达。
 """
 
-# ✅ 核心接口：流式生成反馈
 @app.post("/api/ielts-helper")
 async def ielts_helper_stream(data: IELTSRequest):
     prompt = PROMPT_TEMPLATE.format(input_text=data.input, question=data.question)
 
-    def generate():
-        response = client.chat.completions.create(
-            model="gpt-4-0125-preview",  # ✅ 可替换为 gpt-4-turbo 或其他
+    def gpt_stream():
+        return client.chat.completions.create(
+            model="gpt-4-0125-preview",
             messages=[
                 {"role": "system", "content": "你是一个雅思AI助教"},
                 {"role": "user", "content": prompt}
             ],
             stream=True
         )
+
+    async def generate():
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, gpt_stream)
         for chunk in response:
             if chunk.choices and chunk.choices[0].delta.get("content"):
-                yield chunk.choices[0].delta["content"] + ""  # flush trigger
+                yield chunk.choices[0].delta["content"]
 
     return StreamingResponse(generate(), media_type="text/plain")
 
-# ✅ 动态生成热门题目（使用 GPT-3.5）
 @app.get("/api/random-question")
 async def random_question():
     question_prompt = """
@@ -88,7 +86,6 @@ async def random_question():
             {"role": "user", "content": question_prompt.strip()}
         ]
     )
-
     try:
         result = json.loads(response.choices[0].message.content)
         return result
