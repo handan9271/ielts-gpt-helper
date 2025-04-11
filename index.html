@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>雅思树洞 · 倾听你的表达，优化你的英文</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     body { font-family: "Arial", sans-serif; max-width: 800px; margin: auto; padding: 2rem; line-height: 1.6; }
     textarea, button { width: 100%; font-size: 1rem; margin-top: 1rem; }
@@ -50,7 +51,6 @@
 
   <script>
     let selectedQuestion = { en: '', zh: '' };
-
     const encouragements = [
       "🌟 想说得更好？下一题见！你的每一次表达，都是进步的开始 💪",
       "💬 继续试试看下一题？我还想听你说～",
@@ -82,25 +82,30 @@
         return;
       }
 
-      output.innerHTML = `
-        <div class="loading">
-          <span id="hourglass">⏳</span>
-          小助教正在认真思考中，请稍候…
-        </div>
-      `;
+      output.innerHTML = `<div class="loading"><span id="hourglass">⏳</span> 小助教正在认真思考中，请稍候…</div>`;
 
-      try {
-        const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: selectedQuestion.en, input })
-        });
-        const data = await res.json();
-        const encouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
-        output.innerText = (data.reply || "⚠️ 生成失败，请重试或检查服务状态。") + "\n\n" + encouragement;
-      } catch (e) {
-        output.innerText = "❌ 请求失败，请检查服务是否在线。";
+      const response = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: selectedQuestion.en, input })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let result = "";
+      output.innerHTML = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        result += chunk;
+        output.innerHTML = marked.parse(result);
       }
+
+      const encouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
+      result += `\n\n${encouragement}`;
+      output.innerHTML = marked.parse(result);
     }
   </script>
 </body>
