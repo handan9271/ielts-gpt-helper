@@ -1,139 +1,84 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8">
-  <title>雅思树洞 · 倾听你的表达，优化你的英文</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <style>
-    body { font-family: "Arial", sans-serif; max-width: 800px; margin: auto; padding: 2rem; line-height: 1.6; }
-    textarea, button { width: 100%; font-size: 1rem; margin-top: 1rem; }
-    textarea { height: 120px; padding: 0.5rem; }
-    #output { white-space: normal; background: none; padding: 1rem 0; margin-top: 1.5rem; font-size: 1rem; color: #333; }
-    .loading-state { color: gray; font-style: italic; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; }
-    .zh { color: #666; font-size: 0.95rem; }
-    .btn-row { display: flex; gap: 1rem; margin-top: 0.5rem; }
-    .btn-row button { flex: 1; }
-    .subtitle { color: #888; font-size: 0.95rem; margin-top: -1rem; margin-bottom: 1rem; }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      50% { transform: rotate(180deg); }
-      100% { transform: rotate(360deg); }
-    }
-    #hourglass {
-      display: inline-block;
-      animation: spin 2s linear infinite;
-      font-size: 1.4rem;
-    }
-    mark {
-      background: #fff2a8;
-      padding: 0 4px;
-      border-radius: 4px;
-    }
-    #output h1, #output h2, #output h3 { font-weight: bold; margin-top: 1rem; }
-    #output code { background: #f0f0f0; padding: 2px 4px; border-radius: 4px; }
-    #output strong { font-weight: bold; }
-    #output em { font-style: italic; }
-  </style>
-</head>
-<body>
-  <h2>欢迎来到「雅思树洞」</h2>
-  <p class="subtitle">我会认真听你说出想法，帮你优化成英文表达，还会给出一点温柔的评分建议 💛</p>
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import openai
+import os
+import json
 
-  <label>🧠 今天我们聊聊这个话题：</label>
-  <div id="current-question" style="margin-top: 0.5rem; font-weight: bold;"></div>
-  <p style="font-size: 0.9rem; color: #999;">💡 不喜欢这个题目？点按钮换一个～</p>
-  <div class="btn-row">
-    <button onclick="loadQuestion()">🎲 换一个题目</button>
-  </div>
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-  <label for="input">✏️ 先用中文写下你的经历和想法吧</label>
-  <textarea id="input" placeholder="随便写写你的经历、想法或小故事，用中文说就好，我来帮你变成地道英文～"></textarea>
+app = FastAPI()
 
-  <button onclick="submit()">💬 优化成英文表达</button>
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://handan9271.github.io"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-  <div id="output"></div>
+class IELTSRequest(BaseModel):
+    question: str
+    input: str
 
-  <p style="text-align:center; color:#aaa; margin-top:2rem;">
-    🌱 每一次表达，都是你在「雅思树洞」里种下的成长种子。
-  </p>
+PROMPT_TEMPLATE = """你是一位面向雅思6分以下考生的 AI 写作与口语助教，帮助学生将中文思路转化为结构清晰、语言丰富、逐步提升的英文表达，并引导他们掌握提分关键表达。你的任务包括以下五步：
 
-  <script>
-    let selectedQuestion = { en: '', zh: '' };
+---
 
-    const encouragements = [
-      "🌟 想说得更好？下一题见！你的每一次表达，都是进步的开始 💪",
-      "💬 继续试试看下一题？我还想听你说～",
-      "📖 每一次练习，都是在积累属于你的语言力量。",
-      "🎧 小助教还在这儿，随时帮你继续表达～",
-      "✨ 坚持表达的你，真的越来越棒了！"
-    ];
+【TEEL结构英文表达（逐句输出 + 中文翻译 + 高亮表达）】
+学生中文思路如下：{input_text}
 
-    // marked 自定义插件支持 ==高亮== → <mark>
-    marked.use({
-      tokenizer: {
-        highlight(src) {
-          const match = /^==(.+?)==/.exec(src);
-          if (match) {
-            return {
-              type: "highlight",
-              raw: match[0],
-              text: match[1],
-            };
-          }
+请按照以下格式逐步生成英文回答，每句英文下方附中文翻译，重要表达用**加粗**或==高亮==表示。每段不超过6行。
+
+【词汇讲解】
+挑选当前段落中学生可能不熟悉的词汇（3-5个），写出英文、中文解释、并给出例句。
+
+【AI评分 + 中文反馈建议】
+根据 IELTS 写作评分标准，为学生估算一个 Band 分，并指出优点和改进建议。
+
+【高分参考段落（英文 + 中文 + 高亮表达）】
+生成一个更高分数（+1分）的完整英文段落，与学生原始表达相同主题，逐句翻译并高亮表达。
+"""
+
+@app.post("/api/ielts-helper")
+async def ielts_helper(data: IELTSRequest):
+    prompt = PROMPT_TEMPLATE.format(input_text=data.input, question=data.question)
+    response = client.chat.completions.create(
+        model="gpt-4-0125-preview",
+        messages=[
+            {"role": "system", "content": "你是一个雅思AI助教"},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return {"reply": response.choices[0].message.content}
+
+@app.get("/api/random-question")
+async def random_question():
+    question_prompt = """
+你是一位雅思口语考官助理，请你从最近真实的 Part 2 题库中，随机选择一个热门且具启发性的题目，返回 JSON 格式：
+
+英文题目字段是 "en"，中文翻译字段是 "zh"。
+
+示例：
+{
+  "en": "Describe a time you received positive feedback.",
+  "zh": "描述一次你收到积极反馈的经历"
+}
+只输出 JSON，其他内容不要输出。
+"""
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "你是一个雅思口语题库生成器"},
+            {"role": "user", "content": question_prompt.strip()}
+        ]
+    )
+
+    try:
+        result = json.loads(response.choices[0].message.content)
+        return result
+    except:
+        return {
+            "en": "Describe a piece of technology you use frequently.",
+            "zh": "描述一个你经常使用的科技产品（备用题）"
         }
-      },
-      renderer: {
-        highlight(token) {
-          return `<mark>${token.text}</mark>`;
-        }
-      }
-    });
-
-    async function loadQuestion() {
-      const qDiv = document.getElementById("current-question");
-      qDiv.innerHTML = "⏳ 正在为你挑选新题目...";
-      try {
-        const res = await fetch("https://ielts-gpt-helper.onrender.com/api/random-question");
-        const data = await res.json();
-        selectedQuestion = data;
-        qDiv.innerHTML = `${data.en}<br/><span class='zh'>📖 中文：${data.zh}</span>`;
-      } catch (e) {
-        qDiv.innerHTML = "❌ 获取题目失败，请稍后再试。";
-      }
-    }
-
-    window.onload = () => loadQuestion();
-
-    async function submit() {
-      const input = document.getElementById('input').value.trim();
-      const output = document.getElementById('output');
-      if (!input) {
-        output.innerText = "⚠️ 请输入你的中文思路。";
-        return;
-      }
-
-      output.className = "loading-state";
-      output.innerHTML = `
-        <span id="hourglass">⏳</span>
-        小助教正在认真思考中，请稍候…
-      `;
-
-      try {
-        const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: selectedQuestion.en, input })
-        });
-        const data = await res.json();
-        const encouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
-        output.className = "";
-        output.innerHTML = marked.parse((data.reply || "⚠️ 生成失败，请重试或检查服务状态。").trim() + "\n\n" + encouragement);
-      } catch (e) {
-        output.className = "";
-        output.innerText = "❌ 请求失败，请检查服务是否在线。";
-      }
-    }
-  </script>
-</body>
-</html>
