@@ -46,7 +46,7 @@ PROMPT_TEMPLATE = """你是一位面向雅思6分以下考生的 AI 写作与口
 async def ielts_helper(data: IELTSRequest):
     prompt = PROMPT_TEMPLATE.format(input_text=data.input, question=data.question)
     response = client.chat.completions.create(
-        model="gpt-4",  # 如果你已经切到 gpt-3.5-turbo 可换成那个
+        model="gpt-4-0125-preview", 
         messages=[
             {"role": "system", "content": "你是一个雅思AI助教"},
             {"role": "user", "content": prompt}
