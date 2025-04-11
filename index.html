@@ -93,14 +93,20 @@
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let result = "";
+      let receivedContent = false;
       output.innerHTML = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
+        if (chunk.includes("【") || chunk.trim().length > 30) {
+          receivedContent = true;
+        }
         result += chunk;
-        output.innerHTML = marked.parse(result);
+        if (receivedContent) {
+          output.innerHTML = marked.parse(result);
+        }
       }
 
       const encouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
