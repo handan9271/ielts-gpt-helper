@@ -5,45 +5,80 @@
   <title>雅思树洞 · 倾听你的表达，优化你的英文</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="data:,">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.staticfile.org/marked/9.0.3/marked.min.js"></script>
   <style>
-    body { font-family: "Arial", sans-serif; max-width: 800px; margin: auto; padding: 2rem; line-height: 1.6; }
-    textarea, button { width: 100%; font-size: 1rem; margin-top: 1rem; }
-    textarea { height: 120px; padding: 0.5rem; }
-    #output { white-space: normal; background: none; padding: 1rem 0; margin-top: 1.5rem; font-size: 1rem; color: #333; }
-    .loading-state { color: gray; font-style: italic; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center; }
-    .zh { color: #666; font-size: 0.95rem; }
-    .btn-row { display: flex; gap: 1rem; margin-top: 0.5rem; }
-    .btn-row button { flex: 1; }
-    .subtitle { color: #888; font-size: 0.95rem; margin-top: -1rem; margin-bottom: 1rem; }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      50% { transform: rotate(180deg); }
-      100% { transform: rotate(360deg); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      background-color: #fff;
+      color: #111;
+      margin: 0;
+      padding: 2rem;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.8;
     }
-    #hourglass {
-      display: inline-block;
-      animation: spin 2s linear infinite;
-      font-size: 1.4rem;
+    h2 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+    textarea, button {
+      width: 100%;
+      font-size: 1rem;
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-sizing: border-box;
+    }
+    textarea { height: 120px; }
+    button {
+      background-color: #111;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover { background-color: #333; }
+    #output {
+      white-space: normal;
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      color: #222;
+    }
+    .loading-state {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+    .btn-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+    .btn-row button {
+      flex: 1;
     }
     mark {
       background: #fff2a8;
       padding: 0 4px;
       border-radius: 4px;
     }
-    #output h1, #output h2, #output h3 { font-weight: bold; margin-top: 1rem; }
-    #output code { background: #f0f0f0; padding: 2px 4px; border-radius: 4px; }
-    #output strong { font-weight: bold; }
-    #output em { font-style: italic; }
+    .subtitle {
+      font-size: 0.95rem;
+      color: #888;
+      margin-top: -0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .zh {
+      color: #666;
+      font-size: 0.95rem;
+    }
   </style>
 </head>
 <body>
   <h2>欢迎来到「雅思树洞」</h2>
   <p class="subtitle">我会认真听你说出想法，帮你优化成英文表达，还会给出一点温柔的评分建议 💛</p>
 
-  <label>🧠 今天我们聊聊这个话题：</label>
-  <div id="current-question" style="margin-top: 0.5rem; font-weight: bold;"></div>
-  <p style="font-size: 0.9rem; color: #999;">💡 不喜欢这个题目？点按钮换一个～</p>
+  <div id="current-question"></div>
   <div class="btn-row">
     <button onclick="loadQuestion()">🎲 换一个题目</button>
   </div>
@@ -75,18 +110,11 @@
         {
           name: "highlight",
           level: "inline",
-          start(src) {
-            return src.match(/==/)?.index;
-          },
+          start(src) { return src.match(/==/)?.index },
           tokenizer(src) {
             const match = /^==(.+?)==/.exec(src);
             if (match) {
-              return {
-                type: "highlight",
-                raw: match[0],
-                text: match[1],
-                tokens: []
-              };
+              return { type: "highlight", raw: match[0], text: match[1], tokens: [] };
             }
           },
           renderer(token) {
@@ -103,7 +131,7 @@
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/random-question");
         const data = await res.json();
         selectedQuestion = data;
-        qDiv.innerHTML = `${data.en}<br/><span class='zh'>📖 中文：${data.zh}</span>`;
+        qDiv.innerHTML = `<strong>${data.en}</strong><br/><span class='zh'>📖 中文：${data.zh}</span>`;
       } catch (e) {
         qDiv.innerHTML = "❌ 获取题目失败，请稍后再试。";
       }
@@ -120,10 +148,7 @@
       }
 
       output.className = "loading-state";
-      output.innerHTML = `
-        <span id="hourglass">⏳</span>
-        小助教正在认真思考中，请稍候…
-      `;
+      output.innerHTML = `<span id="hourglass">⏳</span> 小助教正在认真思考中，请稍候…`;
 
       try {
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
@@ -134,7 +159,7 @@
         const data = await res.json();
         const encouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
         output.className = "";
-        output.innerHTML = marked.parse((data.reply || "⚠️ 生成失败，请重试或检查服务状态。").trim() + "\n\n" + encouragement);
+        output.innerHTML = marked.parse((data.reply || "⚠️ 生成失败，请重试或检查服务状态。") + "\n\n" + encouragement);
       } catch (e) {
         output.className = "";
         output.innerText = "❌ 请求失败，请检查服务是否在线。";
