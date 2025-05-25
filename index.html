@@ -19,7 +19,7 @@
       line-height: 1.8;
     }
     h2 { font-size: 1.6rem; margin-bottom: 0.5rem; }
-    textarea, button {
+    textarea, input, button {
       width: 100%;
       font-size: 1rem;
       margin-top: 1rem;
@@ -49,6 +49,14 @@
       color: #666;
       font-style: italic;
     }
+    .btn-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+    .btn-row button {
+      flex: 1;
+    }
     mark {
       background: #fff2a8;
       padding: 0 4px;
@@ -70,8 +78,13 @@
   <h2>欢迎来到「雅思树洞」</h2>
   <p class="subtitle">我会认真听你说出想法，帮你优化成英文表达，还会给出一点温柔的评分建议 💛</p>
 
-  <label for="question">📚 输入你想练习的雅思题目（英文）</label>
-  <textarea id="question" placeholder="Describe a time when you helped someone."></textarea>
+  <div id="current-question"></div>
+  <div class="btn-row">
+    <button onclick="loadQuestion()">🎲 换一个题目</button>
+  </div>
+
+  <label for="question">🎯 你想练习的英文题目（可自定义）</label>
+  <input id="question" type="text" placeholder="Describe a person you admire">
 
   <label for="input">✏️ 用中文写下你的经历和想法</label>
   <textarea id="input" placeholder="随便写写你的经历、想法或小故事，用中文说就好，我来帮你变成地道英文～"></textarea>
@@ -85,9 +98,11 @@
   </p>
 
   <script>
+    let selectedQuestion = { en: '', zh: '' };
+
     const encouragements = [
-      "🌟 想说得更好？继续写写你的想法吧，我一直都在 💪",
-      "💬 有新的思路了吗？下一段故事也可以试试～",
+      "🌟 想说得更好？下一题见！你的每一次表达，都是进步的开始 💪",
+      "💬 继续试试看下一题？我还想听你说～",
       "📖 每一次练习，都是在积累属于你的语言力量。",
       "🎧 小助教还在这儿，随时帮你继续表达～",
       "✨ 坚持表达的你，真的越来越棒了！"
@@ -112,18 +127,35 @@
       ]
     });
 
+    async function loadQuestion() {
+      const qDiv = document.getElementById("current-question");
+      const questionInput = document.getElementById("question");
+      qDiv.innerHTML = "⏳ 正在为你挑选新题目...";
+      try {
+        const res = await fetch("https://ielts-gpt-helper.onrender.com/api/random-question");
+        const data = await res.json();
+        selectedQuestion = data;
+        qDiv.innerHTML = `<strong>${data.en}</strong><br/><span class='zh'>📖 中文：${data.zh}</span>`;
+        questionInput.value = data.en;
+      } catch (e) {
+        qDiv.innerHTML = "❌ 获取题目失败，请稍后再试。";
+      }
+    }
+
+    window.onload = () => loadQuestion();
+
     async function submit() {
       const input = document.getElementById('input').value.trim();
       const question = document.getElementById('question').value.trim();
       const output = document.getElementById('output');
 
-      if (!question) {
-        output.innerText = "⚠️ 请输入你想练习的英文题目。";
+      if (!input) {
+        output.innerText = "⚠️ 请输入你的中文思路。";
         return;
       }
 
-      if (!input) {
-        output.innerText = "⚠️ 请输入你的中文思路。";
+      if (!question) {
+        output.innerText = "⚠️ 请输入或选择一个英文题目。";
         return;
       }
 
@@ -136,7 +168,6 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question, input })
         });
-
         const data = await res.json();
         const encouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
         output.className = "";
