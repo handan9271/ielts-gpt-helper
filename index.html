@@ -1,64 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IELTS Buddy</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPT IELTS Coach</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       height: 100%;
-      background: #ffffff;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      font-family: 'Inter', sans-serif;
+      background-color: #fff;
       color: #111;
       display: flex;
       flex-direction: column;
-    }
-
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       padding: 2rem;
-      gap: 1.5rem;
     }
 
     h1 {
       font-size: 1.6rem;
       font-weight: 600;
+      margin-bottom: 1.2rem;
       text-align: center;
     }
 
     .input-box {
       width: 100%;
-      max-width: 600px;
+      max-width: 640px;
       background: #f9f9f9;
+      padding: 2rem;
       border-radius: 1.5rem;
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-      display: flex;
-      flex-direction: column;
-      padding: 2rem;
-      gap: 1rem;
     }
 
     input, textarea {
       width: 100%;
       font-size: 1rem;
       padding: 1rem;
-      border: 1px solid #e0e0e0;
-      border-radius: 1rem;
+      border: none;
+      border-radius: 12px;
       background: #fff;
-      font-family: inherit;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
     textarea {
@@ -67,38 +53,87 @@
     }
 
     button {
-      padding: 1rem;
-      border: none;
-      border-radius: 9999px;
-      background: #10a37f;
+      width: 100%;
+      background-color: #10a37f;
       color: white;
-      font-weight: 500;
-      cursor: pointer;
+      border: none;
+      padding: 1rem;
       font-size: 1rem;
-      transition: background 0.2s;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s ease;
     }
 
     button:hover {
-      background: #0e8c6d;
+      background-color: #0e8c6d;
+    }
+
+    .output {
+      margin-top: 2rem;
+      max-width: 640px;
+      width: 100%;
+      background: #f8f8f8;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      font-size: 1rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      min-height: 80px;
     }
 
     .footer {
-      text-align: center;
+      margin-top: 2rem;
       font-size: 0.85rem;
       color: #aaa;
-      padding: 1rem;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>带着你的问题，给我你的答案</h1>
+    <h1>GPT IELTS Coach</h1>
     <div class="input-box">
       <input id="question" placeholder="请输入英文或中文题目，例如：Describe a person you admire" />
-      <textarea id="input" placeholder="用英文或中文写出你脑子里的东西～"></textarea>
-      <button onclick="alert('🧪 模拟提交中：可替换为真实 API 请求')">💬优化成地道雅思表达</button>
+      <textarea id="input" placeholder="用英文或中文写下你想表达的内容吧～"></textarea>
+      <button onclick="submit()">💬 优化成地道雅思表达</button>
     </div>
+    <div id="output" class="output"></div>
   </main>
-  <div class="footer">© All rights reserved.</div>
+  <div class="footer">© 2025 GPT IELTS Coach</div>
+
+  <script>
+    async function submit() {
+      const question = document.getElementById("question").value.trim();
+      const input = document.getElementById("input").value.trim();
+      const output = document.getElementById("output");
+      if (!question || !input) {
+        output.innerHTML = "⚠️ 请填写题目和内容。";
+        return;
+      }
+      output.innerHTML = "⏳ 正在优化中，请稍候...";
+
+      try {
+        const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, input })
+        });
+        const data = await res.json();
+        output.innerHTML = "";
+        typeEffect(output, data.reply || "⚠️ 返回为空。");
+      } catch (e) {
+        output.innerHTML = "❌ 请求失败，请检查网络连接。";
+      }
+    }
+
+    function typeEffect(el, text, i = 0) {
+      if (i < text.length) {
+        el.innerHTML += text.charAt(i);
+        setTimeout(() => typeEffect(el, text, i + 1), 12);
+      }
+    }
+  </script>
 </body>
 </html>
