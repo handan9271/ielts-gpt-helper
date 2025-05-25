@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GPT IELTS Coach</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     html, body {
       height: 100%;
       font-family: 'Inter', sans-serif;
@@ -19,14 +19,12 @@
       align-items: center;
       padding: 2rem;
     }
-
     h1 {
       font-size: 1.6rem;
       font-weight: 600;
       margin-bottom: 1.2rem;
       text-align: center;
     }
-
     .input-box {
       width: 100%;
       max-width: 640px;
@@ -35,7 +33,6 @@
       border-radius: 1.5rem;
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     }
-
     input, textarea {
       width: 100%;
       font-size: 1rem;
@@ -46,12 +43,10 @@
       margin-bottom: 1rem;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
-
     textarea {
       resize: vertical;
       min-height: 120px;
     }
-
     button {
       width: 100%;
       background-color: #10a37f;
@@ -64,11 +59,9 @@
       font-weight: 500;
       transition: background 0.2s ease;
     }
-
     button:hover {
       background-color: #0e8c6d;
     }
-
     .output {
       margin-top: 2rem;
       max-width: 640px;
@@ -82,7 +75,6 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
       min-height: 80px;
     }
-
     .footer {
       margin-top: 2rem;
       font-size: 0.85rem;
@@ -104,6 +96,15 @@
   <div class="footer">© 2025 GPT IELTS Coach</div>
 
   <script>
+    function typeEffect(el, text, i = 0, callback) {
+      if (i < text.length) {
+        el.innerHTML += text.charAt(i);
+        setTimeout(() => typeEffect(el, text, i + 1, callback), 12);
+      } else if (callback) {
+        callback();
+      }
+    }
+
     async function submit() {
       const question = document.getElementById("question").value.trim();
       const input = document.getElementById("input").value.trim();
@@ -112,7 +113,16 @@
         output.innerHTML = "⚠️ 请填写题目和内容。";
         return;
       }
-      output.innerHTML = "⏳ 正在优化中，请稍候...";
+
+      output.innerHTML = `
+        <span style="font-size:1rem; color:#555;">
+          ⏳ 正在优化中，请稍候...<br/><br/>
+          ✨ 我们正在为你生成：<br/>
+          • TEEL结构英文段落<br/>
+          • 词汇讲解<br/>
+          • AI评分与改进建议<br/>
+        </span>
+      `;
 
       try {
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
@@ -120,18 +130,22 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question, input })
         });
+
         const data = await res.json();
-        output.innerHTML = "";
-        typeEffect(output, data.reply || "⚠️ 返回为空。");
+        const parts = data.reply.split(/(?=### )/); // 按 markdown 分段
+
+        output.innerHTML = ""; // 清空等待提示
+
+        // 第一段打字显示，其余直接 markdown 渲染
+        typeEffect(output, parts[0] || "", () => {
+          for (let i = 1; i < parts.length; i++) {
+            const section = document.createElement("div");
+            section.innerHTML = marked.parse(parts[i]);
+            output.appendChild(section);
+          }
+        });
       } catch (e) {
         output.innerHTML = "❌ 请求失败，请检查网络连接。";
-      }
-    }
-
-    function typeEffect(el, text, i = 0) {
-      if (i < text.length) {
-        el.innerHTML += text.charAt(i);
-        setTimeout(() => typeEffect(el, text, i + 1), 12);
       }
     }
   </script>
