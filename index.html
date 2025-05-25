@@ -81,6 +81,17 @@
       color: #aaa;
       text-align: center;
     }
+    .loading-step {
+      animation: pulse 1s infinite;
+      color: #666;
+      font-size: 1rem;
+      padding-left: 1rem;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
   </style>
 </head>
 <body>
@@ -93,9 +104,18 @@
     </div>
     <div id="output" class="output"></div>
   </main>
-  <div class="footer">©all rights reserved</div>
+  <div class="footer">© 2025 GPT IELTS Coach</div>
 
   <script>
+    const steps = [
+      "🧠 正在准备结构和主题...",
+      "📚 正在生成高分表达...",
+      "🧪 正在提取核心词汇...",
+      "📊 正在生成评分与建议...",
+      "✅ 即将完成，请稍候..."
+    ];
+    let loadingInterval;
+
     function typeEffect(el, text, i = 0, callback) {
       if (i < text.length) {
         el.innerHTML += text.charAt(i);
@@ -114,15 +134,12 @@
         return;
       }
 
-      output.innerHTML = `
-        <span style="font-size:1rem; color:#555;">
-          ⏳ 正在优化中，请稍候...<br/><br/>
-          ✨ 我们正在为你生成：<br/>
-          • TEEL结构英文段落<br/>
-          • 词汇讲解<br/>
-          • AI评分与改进建议<br/>
-        </span>
-      `;
+      let i = 0;
+      output.innerHTML = `<div class="loading-step" id="loading-step">${steps[0]}</div>`;
+      loadingInterval = setInterval(() => {
+        i = (i + 1) % steps.length;
+        document.getElementById("loading-step").innerText = steps[i];
+      }, 1500);
 
       try {
         const res = await fetch("https://ielts-gpt-helper.onrender.com/api/ielts-helper", {
@@ -132,11 +149,10 @@
         });
 
         const data = await res.json();
-        const parts = data.reply.split(/(?=### )/); // 按 markdown 分段
+        clearInterval(loadingInterval);
+        const parts = data.reply.split(/(?=### )/);
+        output.innerHTML = "";
 
-        output.innerHTML = ""; // 清空等待提示
-
-        // 第一段打字显示，其余直接 markdown 渲染
         typeEffect(output, parts[0] || "", () => {
           for (let i = 1; i < parts.length; i++) {
             const section = document.createElement("div");
@@ -145,6 +161,7 @@
           }
         });
       } catch (e) {
+        clearInterval(loadingInterval);
         output.innerHTML = "❌ 请求失败，请检查网络连接。";
       }
     }
